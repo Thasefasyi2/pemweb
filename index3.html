@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perpustakaan</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f4f6f8; }
+    .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .book-card:hover { transform: translateY(-5px); transition: 0.3s ease; }
+    .book-image { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; }
+    .sidebar { border-left: 1px solid #ddd; padding: 20px; background-color: #fff; height: 100vh; overflow-y: auto; }
+    .navbar-brand { font-weight: bold; }
+    .list-group-item { border: none; border-radius: 10px; margin-bottom: 15px; }
+    .preview-img { height: 60px; width: 40px; object-fit: cover; border-radius: 5px; }
+    .book-list-horizontal { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; }
+    .book-card { min-width: 200px; flex: 0 0 auto; }
+    .alert { position: fixed; top: 20px; right: 20px; z-index: 1050; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">Perpustakaan Digital</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="#">Pinjam Buku</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Buku Dipinjam</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Profil</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="book-list-horizontal" id="book-container"></div>
+      </div>
+      <div class="col-md-4 sidebar">
+        <h5 class="mb-4">Preview Pinjam Buku</h5>
+        <div class="list-group" id="sidebarPinjaman"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const daftarBuku = [
+      { id: 1, title: "Buku 1", author: "Penulis 1", stock: 5, img: "https://blog.sribu.com/wp-content/uploads/2024/07/214639-20231011-cover_31.jpg-642x1024.webp" },
+      { id: 2, title: "Buku 2", author: "Penulis 2", stock: 5, img: "https://blog.sribu.com/wp-content/uploads/2024/07/214639-20231011-cover_31.jpg-642x1024.webp" },
+      { id: 3, title: "Buku 3", author: "Penulis 3", stock: 5, img: "https://blog.sribu.com/wp-content/uploads/2024/07/214639-20231011-cover_31.jpg-642x1024.webp" },
+    ];
+
+    let pinjaman = [];
+
+    window.onload = () => {
+      const container = document.getElementById("book-container");
+      daftarBuku.forEach((buku) => {
+        const div = document.createElement("div");
+        div.className = "book-card card p-3";
+        div.innerHTML = `
+          <img src="${buku.img}" class="book-image mb-2" alt="${buku.title}" />
+          <h6>${buku.title}</h6>
+          <p class="text-muted">${buku.author}</p>
+          <p id="stock-${buku.id}" class="text-success fw-bold">Stok: ${buku.stock}</p>
+          <button class="btn btn-sm btn-primary" onclick="konfirmasiPinjam(${buku.id})">Pinjam</button>`;
+        container.appendChild(div);
+      });
+    };
+
+    function showNotifikasi(message) {
+      const notif = document.createElement('div');
+      notif.className = 'alert alert-danger';
+      notif.textContent = message;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+
+    function konfirmasiPinjam(idBuku) {
+      const buku = daftarBuku.find(b => b.id === idBuku);
+      if (!buku || buku.stock <= 0) {
+        showNotifikasi(`"${buku?.title || 'Buku'}" sedang dipinjam!`);
+        return;
+      }
+
+      let inputTanggal = prompt("Kapan akan dikembalikan? (format: YYYY-MM-DD)");
+      if (!inputTanggal) {
+        showNotifikasi("Tanggal pengembalian dibatalkan.");
+        return;
+      }
+
+      const kodeKonfirmasi = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      const item = {
+        id: Math.random().toString(36).substr(2, 9),
+        idBuku: buku.id,
+        title: buku.title,
+        author: buku.author,
+        img: buku.img,
+        tanggalKembali: new Date(inputTanggal).toDateString(),
+        aktif: false,
+        kode: kodeKonfirmasi,
+        startTime: null
+      };
+
+      buku.stock--;
+      document.getElementById(`stock-${idBuku}`).textContent = `Stok: ${buku.stock}`;
+      pinjaman.push(item);
+      updateSidebar();
+    }
+
+    function aktifkanPinjaman(kode) {
+      const item = pinjaman.find(p => p.kode === kode);
+      if (item && !item.aktif) {
+        item.aktif = true;
+        item.startTime = new Date().getTime();
+        updateSidebar();
+      } else {
+        showNotifikasi("Kode tidak valid atau sudah aktif.");
+      }
+    }
+
+    function batalkanPinjaman(id) {
+      const index = pinjaman.findIndex(p => p.id === id);
+      if (index !== -1) {
+        const buku = daftarBuku.find(b => b.id === pinjaman[index].idBuku);
+        if (buku) buku.stock++;
+        pinjaman.splice(index, 1);
+        updateSidebar();
+        document.getElementById(`stock-${buku.id}`).textContent = `Stok: ${buku.stock}`;
+      }
+    }
+
+    function ubahTanggal(id) {
+      const item = pinjaman.find(p => p.id === id);
+      const newDate = prompt("Ubah tanggal pengembalian (format: YYYY-MM-DD)", item.tanggalKembali);
+      if (newDate) {
+        item.tanggalKembali = new Date(newDate).toDateString();
+        updateSidebar();
+      }
+    }
+
+    function updateSidebar() {
+      const sidebar = document.getElementById("sidebarPinjaman");
+      sidebar.innerHTML = "";
+      pinjaman.forEach(item => {
+        const waktuAktif = item.aktif 
+          ? `<small class='text-danger' id='timer-${item.id}'></small>` 
+          : `<small class='text-muted'>Kode: ${item.kode}</small><br />
+             <button class='btn btn-sm btn-outline-success mt-1' onclick="aktifkanPinjaman('${item.kode}')">Aktifkan (Admin)</button>
+             <button class='btn btn-sm btn-outline-warning mt-1' onclick="ubahTanggal('${item.id}')">Ubah Tanggal</button>
+             <button class='btn btn-sm btn-outline-danger mt-1' onclick="batalkanPinjaman('${item.id}')">Batalkan</button>`;
+
+        sidebar.innerHTML += `
+          <div class="list-group-item d-flex align-items-start">
+            <img src="${item.img}" class="preview-img me-3" alt="${item.title}" />
+            <div>
+              <div><strong>${item.title}</strong></div>
+              <small class="text-muted">${item.author}</small><br />
+              <small>Kembali: ${item.tanggalKembali}</small><br />
+              ${waktuAktif}
+            </div>
+          </div>`;
+      });
+    }
+
+    function updateTimer() {
+      const now = new Date().getTime();
+      pinjaman.forEach(item => {
+        if (!item.aktif) return;
+        const deadline = new Date(item.tanggalKembali).getTime();
+        const t = deadline - now;
+        const el = document.getElementById(`timer-${item.id}`);
+        if (!el) return;
+        if (t > 0) {
+          const days = Math.floor(t / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((t % (1000 * 60)) / 1000);
+          el.innerHTML = `${days}d ${hours}j ${minutes}m ${seconds}d`;
+        } else {
+          el.innerHTML = "Sudah jatuh tempo";
+        }
+      });
+    }
+
+    setInterval(updateTimer, 1000);
+  </script>
+</body>
+</html>
