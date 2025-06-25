@@ -1,0 +1,6 @@
+[
+    { "id": 1, "title": "Buku JavaScript", "author": "Joan", "stock": 3, "img": "https://bintangpusnas.perpusnas.go.id/api/getImage/1d86f9bc16adda5618ee040cbb860951.webp" },
+      { "id": 2, "title": "Manual Book Arch", "author": "Adhy", "stock": 2, "img": "https://isbncoverdb.com/images/book-cover-arch-linux-environment-setup-how-to.webp" },
+      { "id": 3, "title": "Windows Manual Book", "author": "Ridho", "stock": 4, "img": "https://www.picclickimg.com/eAYAAOSwcWZkymcH/Microsoft-Windows-for-Workgroups-Users-Guide-Version.webp" },
+      { "id": 4, "title": "Lukisan Awan", "author": "Amri lali ngaji", "stock": 4, "img": "https://blog.sribu.com/wp-content/uploads/2024/07/214639-20231011-cover_31.jpg-642x1024.webp" }
+]
